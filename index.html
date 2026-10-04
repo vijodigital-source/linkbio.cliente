@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meu link na bio</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1a1d23;--mut:#6b7280;--bd:#e3e6eb;--ac:#2f5bea;--ok:#12805c;--bad:#b42318}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--tx:#e8eaee;--mut:#9aa1ad;--bd:#2a2e37;--ac:#6d8cff;--ok:#3ecf9b;--bad:#ff7b72}}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--tx)}
+.wrap{max-width:720px;margin:0 auto;padding:18px 14px}
+h1{font-size:19px;margin:0}h2{font-size:16px;margin:0 0 10px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+input,button{font:inherit;color:var(--tx)}
+input{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+button{padding:9px 13px;border:1px solid var(--bd);border-radius:8px;background:var(--card);cursor:pointer}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
+button.sm{padding:5px 9px;font-size:13px}button.del{color:var(--bad)}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+.mut{color:var(--mut);font-size:13px}.err{color:var(--bad);font-size:13px;min-height:18px}
+#auth{max-width:340px;margin:10vh auto}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.row{display:flex;gap:8px;align-items:center}.row>input{flex:1;min-width:0}
+.link{border-top:1px solid var(--bd);padding:10px 0}.link:first-child{border-top:0}
+.link .row{margin-bottom:6px}
+.badge{padding:2px 8px;border-radius:99px;font-size:12px;border:1px solid var(--bd)}.pro{color:var(--ok);border-color:var(--ok)}
+.bars{display:flex;align-items:flex-end;gap:2px;height:90px;margin:8px 0}
+.bars i{flex:1;background:var(--ac);border-radius:2px 2px 0 0;min-height:2px;opacity:.85}
+.big{font-size:26px;font-weight:700}
+.bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden}.bar b{display:block;height:100%;background:var(--ac)}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px}
+</style>
+</head>
+<body>
+
+<div id="auth" class="card" hidden>
+  <h1 id="authTitle">Entrar</h1>
+  <form id="authForm">
+    <div id="nameBox" hidden><label for="name">Nome</label><input id="name" autocomplete="name"></div>
+    <label for="email">E-mail</label><input id="email" type="email" required autocomplete="username">
+    <label for="password">Senha (mín. 8 caracteres)</label><input id="password" type="password" minlength="8" required autocomplete="current-password">
+    <p id="authMsg" class="err"></p>
+    <button class="pri" style="width:100%" id="authBtn">Entrar</button>
+  </form>
+  <p class="mut" style="text-align:center"><a href="#" id="authSwap">Criar conta grátis</a></p>
+</div>
+
+<div id="app" class="wrap" hidden>
+  <header><h1>Meu link na bio</h1><div><span id="planBadge" class="badge"></span> <button id="logout" class="sm">Sair</button></div></header>
+
+  <div class="card">
+    <label for="slug" style="margin-top:0">Seu endereço</label>
+    <div class="row"><input id="slug" placeholder="seu-nome" maxlength="30"><button id="saveSlug" class="pri">Salvar</button></div>
+    <p class="err" id="slugErr"></p>
+    <div class="row" id="urlBox" hidden><input id="pubUrl" readonly><button id="copy">Copiar</button></div>
+  </div>
+
+  <div class="tabs">
+    <button data-tab="links" class="on">Links</button><button data-tab="stats">Análises</button><button data-tab="plan">Plano</button>
+  </div>
+
+  <section id="t-links">
+    <div class="card">
+      <h2>Adicionar link <span class="mut" id="count"></span></h2>
+      <div class="row"><input id="nTitle" placeholder="Título (ex.: WhatsApp)" maxlength="80"></div>
+      <div class="row" style="margin-top:8px"><input id="nUrl" placeholder="https://..."><button id="add" class="pri">Adicionar</button></div>
+      <p class="err" id="addErr"></p>
+    </div>
+    <div class="card" id="linkList"></div>
+  </section>
+
+  <section id="t-stats" hidden><div class="card" id="statsBox"></div></section>
+
+  <section id="t-plan" hidden>
+    <div class="card" id="planBox"></div>
+  </section>
+</div>
+
+<div id="toast" hidden></div>
+
+<script>
+// ===== CONFIGURAÇÃO =====
+const SUPABASE_URL = 'https://qbbqlsimsmuhmoaxrgps.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYnFsc2ltc211aG1vYXhyZ3BzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwNzE1NTAsImV4cCI6MjEwNjY0NzU1MH0.6VePjP5kVCBuoJgkl-yNwnEz9q7xswETHGPG_x7rzPQ';
+const PUBLIC_BASE = 'https://SEU-DOMINIO/l/';   // endereço público: troque quando decidir o domínio
+const SUBSCRIBE_ENDPOINT = '';                  // endpoint que cria a assinatura no Asaas (próxima etapa)
+const PRECO_MENSAL = 24.90;
+const LIMITE_FREE = 8;
+// ========================
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let uid = null, me = null, pro = false, links = [], signup = false;
+
+function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; setTimeout(()=>t.hidden=true,3200); }
+
+/* ---------- Autenticação ---------- */
+function showAuth(){ $('#app').hidden=true; $('#auth').hidden=false; }
+$('#authSwap').onclick = e => {
+  e.preventDefault(); signup = !signup;
+  $('#authTitle').textContent = $('#authBtn').textContent = signup ? 'Criar conta' : 'Entrar';
+  $('#authSwap').textContent = signup ? 'Já tenho conta' : 'Criar conta grátis';
+  $('#nameBox').hidden = !signup; $('#authMsg').textContent = '';
+};
+$('#authForm').onsubmit = async e => {
+  e.preventDefault(); const msg = $('#authMsg'); msg.textContent = '';
+  const email = $('#email').value.trim(), password = $('#password').value;
+  if(signup){
+    const { data, error } = await db.auth.signUp({ email, password, options:{ data:{ name:$('#name').value.trim() } } });
+    if(error) return msg.textContent = error.message;
+    if(!data.session) return msg.textContent = 'Conta criada. Confirme seu e-mail e depois entre.';
+  } else {
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    if(error) return msg.textContent = 'E-mail ou senha inválidos.';
+  }
+  enter();
+};
+$('#logout').onclick = async () => { await db.auth.signOut(); showAuth(); };
+
+async function enter(){
+  const { data:{ user } } = await db.auth.getUser();
+  if(!user) return showAuth();
+  uid = user.id; $('#auth').hidden = true; $('#app').hidden = false;
+  await loadMe(); await loadLinks(); showTab('links');
+}
+
+async function loadMe(){
+  const { data } = await db.from('profiles').select('name,slug,plan,status,plan_expires_at').eq('id',uid).single();
+  me = data;
+  const r = await db.rpc('is_pro',{ p_id: uid }); pro = r.data === true;
+  $('#slug').value = me.slug || '';
+  const b = $('#planBadge'); b.textContent = pro ? 'Pro' : 'Gratuito'; b.className = 'badge' + (pro ? ' pro' : '');
+  showUrl();
+}
+function showUrl(){
+  $('#urlBox').hidden = !me.slug; $('#pubUrl').value = PUBLIC_BASE + (me.slug || '');
+}
+
+/* ---------- Endereço ---------- */
+$('#saveSlug').onclick = async () => {
+  const slug = $('#slug').value.trim().toLowerCase(), err = $('#slugErr'); err.textContent = '';
+  const { error } = await db.from('profiles').update({ slug }).eq('id',uid);
+  if(error) return err.textContent = error.code==='23505' ? 'Esse endereço já está em uso.' : 'Use 3 a 30 letras minúsculas, números, - ou _.';
+  me.slug = slug; showUrl(); toast('Endereço salvo');
+};
+$('#copy').onclick = () => navigator.clipboard.writeText($('#pubUrl').value).then(()=>toast('Link copiado'));
+
+/* ---------- Links ---------- */
+async function loadLinks(){
+  const { data, error } = await db.from('links').select('*').eq('profile_id',uid).order('position');
+  if(error) return toast('Erro: '+error.message);
+  links = data; renderLinks();
+}
+function renderLinks(){
+  $('#count').textContent = pro ? `(${links.length} links)` : `(${links.length}/${LIMITE_FREE})`;
+  $('#linkList').innerHTML = links.map((l,i)=>`
+    <div class="link" data-id="${esc(l.id)}">
+      <div class="row"><input class="t" value="${esc(l.title)}" maxlength="80"></div>
+      <div class="row"><input class="u" value="${esc(l.url)}"></div>
+      <div class="row" style="justify-content:space-between">
+        <label class="mut" style="margin:0"><input type="checkbox" data-act="toggle" ${l.active?'checked':''} style="width:auto"> Ativo</label>
+        <span>
+          <button class="sm" data-act="up" ${i===0?'disabled':''}>↑</button>
+          <button class="sm" data-act="down" ${i===links.length-1?'disabled':''}>↓</button>
+          <button class="sm" data-act="save">Salvar</button>
+          <button class="sm del" data-act="del">Excluir</button>
+        </span>
+      </div>
+    </div>`).join('') || '<p class="mut">Nenhum link ainda. Adicione o primeiro acima.</p>';
+}
+$('#add').onclick = async () => {
+  const err = $('#addErr'); err.textContent = '';
+  const title = $('#nTitle').value.trim(), url = $('#nUrl').value.trim();
+  if(!title || !url) return err.textContent = 'Preencha título e URL.';
+  const position = links.length ? Math.max(...links.map(l=>l.position)) + 1 : 0;
+  const { error } = await db.from('links').insert({ profile_id:uid, title, url, position });
+  if(error) return err.textContent = /Limite/.test(error.message) ? `Limite de ${LIMITE_FREE} links do plano gratuito. Assine o Pro para links ilimitados.` : 'URL inválida. Comece com http:// ou https://';
+  $('#nTitle').value = $('#nUrl').value = ''; loadLinks();
+};
+$('#linkList').onclick = async e => {
+  const act = e.target.dataset.act, box = e.target.closest('.link'); if(!act || !box) return;
+  const id = box.dataset.id, i = links.findIndex(l=>l.id===id);
+  let r;
+  if(act==='save') r = await db.from('links').update({ title:box.querySelector('.t').value.trim(), url:box.querySelector('.u').value.trim() }).eq('id',id);
+  if(act==='del'){ if(!confirm('Excluir este link?')) return; r = await db.from('links').delete().eq('id',id); }
+  if(act==='toggle') r = await db.from('links').update({ active:e.target.checked }).eq('id',id);
+  if(act==='up' || act==='down'){
+    const j = act==='up' ? i-1 : i+1, a = links[i], b = links[j];
+    const rs = await Promise.all([ db.from('links').update({position:b.position}).eq('id',a.id), db.from('links').update({position:a.position}).eq('id',b.id) ]);
+    r = rs.find(x=>x.error) || {};
+  }
+  if(r?.error) return toast('Erro: '+(r.error.message.includes('url_check')?'URL inválida':r.error.message));
+  if(act==='save') toast('Link salvo');
+  loadLinks();
+};
+
+/* ---------- Abas ---------- */
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+function showTab(t){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on', b.dataset.tab===t));
+  ['links','stats','plan'].forEach(x => $('#t-'+x).hidden = x!==t);
+  if(t==='stats') loadStats(); if(t==='plan') renderPlan();
+}
+
+/* ---------- Análises ---------- */
+async function loadStats(){
+  const box = $('#statsBox');
+  if(!pro){
+    const { data } = await db.rpc('my_click_total');
+    box.innerHTML = `<h2>Análises</h2><div class="big">${data ?? 0}</div><p class="mut">cliques recebidos até agora.</p>
+      <p>Assine o Pro para ver cliques por link e por dia.</p><button class="pri" id="goPlan">Ver plano Pro</button>`;
+    $('#goPlan').onclick = () => showTab('plan'); return;
+  }
+  if(!links.length){ box.innerHTML = '<p class="mut">Adicione links para começar a medir.</p>'; return; }
+  const since = new Date(Date.now() - 29*864e5); since.setHours(0,0,0,0);
+  const { data, error } = await db.from('clicks').select('link_id,clicked_at').in('link_id', links.map(l=>l.id)).gte('clicked_at', since.toISOString()).limit(10000);
+  if(error) return box.innerHTML = '<p class="err">Erro ao carregar análises.</p>';
+  const byLink = {}, byDay = {};
+  data.forEach(c => { byLink[c.link_id] = (byLink[c.link_id]||0)+1; const d = new Date(c.clicked_at).toLocaleDateString('sv-SE'); byDay[d] = (byDay[d]||0)+1; });
+  const days = Array.from({length:30}, (_,k) => { const d = new Date(since.getTime()+k*864e5); return d.toLocaleDateString('sv-SE'); });
+  const max = Math.max(1, ...days.map(d=>byDay[d]||0)), top = Math.max(1, ...Object.values(byLink), 1);
+  box.innerHTML = `<h2>Últimos 30 dias</h2><div class="big">${data.length}</div><span class="mut">cliques</span>
+    <div class="bars">${days.map(d=>`<i title="${d}: ${byDay[d]||0}" style="height:${Math.round((byDay[d]||0)/max*100)}%"></i>`).join('')}</div>
+    <h2 style="margin-top:14px">Por link</h2>` +
+    links.map(l=>`<div style="margin:8px 0"><div class="row" style="justify-content:space-between"><span>${esc(l.title)}</span><b>${byLink[l.id]||0}</b></div><div class="bar"><b style="width:${(byLink[l.id]||0)/top*100}%"></b></div></div>`).join('');
+}
+
+/* ---------- Plano ---------- */
+function renderPlan(){
+  const exp = me.plan_expires_at ? new Date(me.plan_expires_at).toLocaleDateString('pt-BR') : null;
+  $('#planBox').innerHTML = pro
+    ? `<h2>Plano Pro ativo</h2><p class="mut">${exp ? 'Válido até '+exp+'.' : 'Sem data de vencimento.'}${me.status==='past_due'?' Há um pagamento em atraso: regularize para não perder o acesso.':''}</p>`
+    : `<h2>Plano Pro</h2><div class="big">R$ ${PRECO_MENSAL.toFixed(2).replace('.',',')}<span class="mut">/mês</span></div>
+       <p>Links ilimitados, análises de cliques e remoção do selo da plataforma.</p><button class="pri" id="subscribe">Assinar plano mensal</button>`;
+  const s = $('#subscribe'); if(s) s.onclick = assinar;
+}
+async function assinar(){
+  if(!SUBSCRIBE_ENDPOINT) return toast('Assinatura em configuração. Volte em breve.');
+  const { data:{ session } } = await db.auth.getSession();
+  try {
+    const r = await fetch(SUBSCRIBE_ENDPOINT, { method:'POST', headers:{ Authorization:'Bearer '+session.access_token } });
+    const j = await r.json().catch(()=>({}));
+    j.url ? location.href = j.url : toast(j.error || 'Não foi possível iniciar a assinatura.');
+  } catch { toast('Falha de conexão. Tente novamente.'); }
+}
+
+db.auth.getSession().then(({ data:{ session } }) => session ? enter() : showAuth());
+</script>
+</body>
+</html>
