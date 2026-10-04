@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Meu link na bio</title>
+<title>Link na Bio: todos os seus links em uma página só</title>
+<meta name="description" content="Crie sua página de link na bio em 2 minutos, com WhatsApp, site e redes sociais, e acompanhe os cliques.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
 :root{--bg:#f6f7f9;--card:#fff;--tx:#1a1d23;--mut:#6b7280;--bd:#e3e6eb;--ac:#2f5bea;--ok:#12805c;--bad:#b42318}
@@ -21,7 +22,21 @@ button.pri{background:var(--ac);border-color:var(--ac);color:#fff}
 button.sm{padding:5px 9px;font-size:13px}button.del{color:var(--bad)}
 label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
 .mut{color:var(--mut);font-size:13px}.err{color:var(--bad);font-size:13px;min-height:18px}
-#auth{max-width:340px;margin:10vh auto}
+#auth{position:fixed;top:8vh;left:50%;transform:translateX(-50%);width:min(340px,92vw);margin:0;z-index:10;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+#veil{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9}
+.lp{max-width:860px;margin:0 auto;padding:0 16px 30px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+.hero{text-align:center;padding:44px 0 30px}
+.hero h2{font-size:clamp(28px,6vw,42px);line-height:1.15;margin:0 0 14px}
+.hero p{max-width:540px;margin:0 auto 20px;color:var(--mut);font-size:17px}
+button.big{padding:14px 24px;font-size:16px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lp h3{margin:34px 0 14px;font-size:20px;text-align:center}
+.plan.destaque{border-color:var(--ac);border-width:2px}
+.plan ul{padding-left:18px;margin:10px 0 16px}.plan li{margin:6px 0}
+.price{font-size:30px;font-weight:700}
+details{border-top:1px solid var(--bd);padding:12px 0}summary{cursor:pointer;font-weight:600}
+footer{text-align:center;margin-top:30px}footer a{color:var(--mut)}
 .tabs{display:flex;gap:6px;margin-bottom:12px}.tabs button.on{background:var(--ac);border-color:var(--ac);color:#fff}
 .row{display:flex;gap:8px;align-items:center}.row>input{flex:1;min-width:0}
 .link{border-top:1px solid var(--bd);padding:10px 0}.link:first-child{border-top:0}
@@ -36,7 +51,44 @@ label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
 </head>
 <body>
 
+<div id="landing" class="lp" hidden>
+  <div class="top"><b>Link na Bio</b><button class="sm" id="goLogin">Entrar</button></div>
+  <section class="hero">
+    <h2>Todos os seus links em uma página só</h2>
+    <p>Crie sua página em 2 minutos com seu WhatsApp, site e redes sociais, e descubra o que seus seguidores mais clicam.</p>
+    <button class="pri big" data-signup>Criar meu link grátis</button>
+    <p class="mut" style="margin-top:10px;font-size:14px">Sem cartão de crédito</p>
+  </section>
+  <h3>Como funciona</h3>
+  <div class="grid">
+    <div class="card"><b>1. Crie sua conta</b><p class="mut">Cadastro com e-mail e senha, em menos de um minuto.</p></div>
+    <div class="card"><b>2. Adicione seus links</b><p class="mut">WhatsApp, site, agenda, redes sociais. Reordene quando quiser.</p></div>
+    <div class="card"><b>3. Cole na sua bio</b><p class="mut">Você recebe um endereço curto para divulgar em qualquer rede.</p></div>
+  </div>
+  <h3 id="planos">Planos</h3>
+  <div class="grid">
+    <div class="card plan">
+      <b>Gratuito</b><div class="price">R$ 0</div>
+      <ul><li>Sua página de links</li><li>Até <span class="limite"></span> links</li><li>Total de cliques recebidos</li><li>Selo da plataforma na página</li></ul>
+      <button class="big" style="width:100%" data-signup>Começar grátis</button>
+    </div>
+    <div class="card plan destaque">
+      <b>Mensal</b><div class="price">R$ <span class="preco"></span><span class="mut" style="font-size:15px;font-weight:400">/mês</span></div>
+      <ul><li>Tudo do plano gratuito</li><li>Links ilimitados</li><li>Análises: cliques por dia e por link</li><li>Página sem o selo da plataforma</li></ul>
+      <button class="pri big" style="width:100%" data-signup>Criar conta e assinar</button>
+    </div>
+  </div>
+  <h3>Perguntas frequentes</h3>
+  <details><summary>Preciso de cartão para usar o plano gratuito?</summary><p class="mut">Não. Você só informa pagamento se decidir assinar o plano mensal.</p></details>
+  <details><summary>Como pago o plano mensal?</summary><p class="mut">Por Pix, boleto ou cartão, em ambiente de pagamento seguro. O acesso é liberado automaticamente após a confirmação.</p></details>
+  <details><summary>Posso cancelar quando quiser?</summary><p class="mut">Sim. Ao cancelar, você mantém o plano até o fim do período já pago e depois volta ao gratuito, sem perder seus links.</p></details>
+  <details><summary>Posso trocar meu endereço?</summary><p class="mut">Sim, a qualquer momento, desde que o novo endereço esteja livre.</p></details>
+  <footer class="mut"><a href="/termos.html">Termos de uso</a> · <a href="/privacidade.html">Política de privacidade</a></footer>
+</div>
+
+<div id="veil" hidden></div>
 <div id="auth" class="card" hidden>
+  <button type="button" id="authClose" class="sm" style="position:absolute;top:10px;right:10px" aria-label="Fechar">×</button>
   <h1 id="authTitle">Entrar</h1>
   <form id="authForm">
     <div id="nameBox" hidden><label for="name">Nome</label><input id="name" autocomplete="name"></div>
@@ -99,13 +151,21 @@ let uid = null, me = null, pro = false, links = [], signup = false;
 function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; setTimeout(()=>t.hidden=true,3200); }
 
 /* ---------- Autenticação ---------- */
-function showAuth(){ $('#app').hidden=true; $('#auth').hidden=false; }
-$('#authSwap').onclick = e => {
-  e.preventDefault(); signup = !signup;
+function showAuth(){ $('#app').hidden=true; $('#landing').hidden=false; closeAuth(); }
+function closeAuth(){ $('#auth').hidden=true; $('#veil').hidden=true; }
+function setMode(s){
+  signup = s;
   $('#authTitle').textContent = $('#authBtn').textContent = signup ? 'Criar conta' : 'Entrar';
   $('#authSwap').textContent = signup ? 'Já tenho conta' : 'Criar conta grátis';
   $('#nameBox').hidden = !signup; $('#authMsg').textContent = '';
-};
+}
+function openAuth(s){ setMode(s); $('#auth').hidden=false; $('#veil').hidden=false; $('#email').focus(); }
+$('#authSwap').onclick = e => { e.preventDefault(); setMode(!signup); };
+$('#authClose').onclick = closeAuth; $('#veil').onclick = closeAuth;
+$('#goLogin').onclick = () => openAuth(false);
+document.querySelectorAll('[data-signup]').forEach(b => b.onclick = () => openAuth(true));
+document.querySelectorAll('.preco').forEach(e => e.textContent = PRECO_MENSAL.toFixed(2).replace('.', ','));
+document.querySelectorAll('.limite').forEach(e => e.textContent = LIMITE_FREE);
 $('#authForm').onsubmit = async e => {
   e.preventDefault(); const msg = $('#authMsg'); msg.textContent = '';
   const email = $('#email').value.trim(), password = $('#password').value;
@@ -124,7 +184,7 @@ $('#logout').onclick = async () => { await db.auth.signOut(); showAuth(); };
 async function enter(){
   const { data:{ user } } = await db.auth.getUser();
   if(!user) return showAuth();
-  uid = user.id; $('#auth').hidden = true; $('#app').hidden = false;
+  uid = user.id; closeAuth(); $('#landing').hidden = true; $('#app').hidden = false;
   await loadMe(); await loadLinks(); showTab('links');
 }
 
